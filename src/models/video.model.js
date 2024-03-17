@@ -4,11 +4,17 @@ import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 var videoSchema = new mongoose.Schema(
   {
     videoFile: {
-      type: String,
+      type: {
+        url: String,
+        public_id: String,
+      },
       required: true,
     },
     thumbnail: {
-      type: String,
+      type: {
+        url: String,
+        public_id: String,
+      },
       required: true,
     },
     title: {
