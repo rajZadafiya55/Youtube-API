@@ -1,13 +1,30 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Playlist } from "../models/playlist.model.js";
 import { ApiError } from "../utils/ApiError.js";
-// import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiResponse } from "../utils/ApiRespone.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const createPlaylist = asyncHandler(async (req, res) => {
+  //TODO: create playlist
   const { name, description } = req.body;
 
-  //TODO: create playlist
+  if (!name || !description) {
+    throw new ApiError(400, "All field are required!");
+  }
+
+  const playlist = await Playlist.create({
+    name,
+    description,
+    owner: req.user?._id,
+  });
+
+  if (!playlist) {
+    throw new ApiError(400, "create playlist failed");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, playlist, "Playlist created successfully.!"));
 });
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
@@ -16,8 +33,16 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 });
 
 const getPlaylistById = asyncHandler(async (req, res) => {
-  const { playlistId } = req.params;
   //TODO: get playlist by id
+  // const { playlistId } = req.params;
+  // if (!isValidObjectId(playlistId)) {
+  //   throw new ApiError(400, "Invalid PlaylistId");
+  // }
+  // const playlist = await Playlist.findById(playlistId);
+  // if (!playlist) {
+  //   throw new ApiError(400, "playlist not found");
+  // }
+  // return res.status(200).json(200, playlist, "playlist fetched successfully.!");
 });
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
@@ -31,13 +56,61 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
 const deletePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
-  // TODO: delete playlist
+  if (!isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid PlaylistId");
+  }
+
+  const playlist = await Playlist.findById(playlistId);
+
+  if (!playlist) {
+    throw new ApiError(400, "playlist not found");
+  }
+
+  const playlistDelete = await Playlist.findByIdAndDelete(playlistId);
+
+  if (!playlistDelete) {
+    throw new ApiError(400, "failed to delete playlist");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "playlist Deleted successfully.!"));
 });
 
 const updatePlaylist = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   const { name, description } = req.body;
-  //TODO: update playlist
+
+  if (!isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid PlaylistId");
+  }
+
+  const playlist = await Playlist.findById(playlistId);
+
+  if (!playlist) {
+    throw new ApiError(400, "playlist not found");
+  }
+
+  const playlistUpdated = await Playlist.findByIdAndUpdate(
+    playlistId,
+    {
+      $set: {
+        name,
+        description,
+      },
+    },
+    { new: true }
+  );
+
+  if (!playlistUpdated) {
+    throw new ApiError(400, "failed to update playlist");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, playlistUpdated, "playlist updated successfully.!")
+    );
 });
 
 export {
