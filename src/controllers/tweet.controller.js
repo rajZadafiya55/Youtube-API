@@ -18,7 +18,7 @@ const createTweet = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid owner ID");
   }
 
-  const owner = await User.findById(_id); 
+  const owner = await User.findById(_id);
 
   if (!owner) {
     throw new ApiError(404, "Owner not found");
@@ -39,15 +39,20 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
-  const { _id } = req.params;
-  const tweet = await Tweet.findById( _id );
+  const { userId } = req.params;
 
-  console.log("tweet", tweet);
+  if (!isValidObjectId(userId)) {
+    throw new ApiError(400, "Invalid userId");
+  }
+  const tweet = await Tweet.findById(userId);
 
   if (!tweet) {
     throw new ApiError(400, "data not Found");
   }
-  return res.status(200).json(200, tweet, "Tweet fetched Successfully.!");
+  
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tweet, "Tweet fetched Successfully.!"));
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
