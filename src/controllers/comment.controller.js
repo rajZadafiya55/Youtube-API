@@ -13,13 +13,6 @@ const getVideoComments = asyncHandler(async (req, res) => {
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid VideoId");
   }
-
-  const video = await Video.findById(videoId);
-
-  if (!video) {
-    throw new ApiError(400, "video not found");
-  }
-
   const comments = await Comment.aggregate([
     {
       $match: {

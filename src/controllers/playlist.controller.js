@@ -1,5 +1,6 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Playlist } from "../models/playlist.model.js";
+import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiRespone.js";
@@ -31,24 +32,142 @@ const createPlaylist = asyncHandler(async (req, res) => {
 const getUserPlaylists = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   //TODO: get user playlists
+
+  if (!isValidObjectId(userId)) {
+    throw new ApiError(400, "Invalid userId");
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(400, "user not found");
+  }
+
+  const playlist = await Playlist.aggregate([
+    {
+      $match: { owner: new mongoose.Types.ObjectId(userId) },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videos",
+        foreignField: "_id",
+        as: "videos",
+      },
+    },
+    {
+      $addFields: {
+        totalViews: {
+          $sum: "$videos.views",
+        },
+        totalVideos: {
+          $size: "$videos",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        description: 1,
+        totalVideos: 1,
+        totalViews: 1,
+        videos: {
+          videoFile: 1,
+          thumbnail: 1,
+          title: 1,
+          description: 1,
+          duration: 1,
+          views: 1,
+        },
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, playlist, "User playlists fetched successfully")
+    );
 });
 
 const getPlaylistById = asyncHandler(async (req, res) => {
   //TODO: get playlist by id
-  // const { playlistId } = req.params;
-  // if (!isValidObjectId(playlistId)) {
-  //   throw new ApiError(400, "Invalid PlaylistId");
-  // }
-  // const playlist = await Playlist.findById(playlistId);
-  // if (!playlist) {
-  //   throw new ApiError(400, "playlist not found");
-  // }
-  // return res.status(200).json(200, playlist, "playlist fetched successfully.!");
+  const { playlistId } = req.params;
+
+  if (!isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid PlaylistId");
+  }
+  const playlist = await Playlist.findById(playlistId);
+  if (!playlist) {
+    throw new ApiError(400, "playlist not found");
+  }
+
+  const playlistVideo = await Playlist.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(playlistId),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videos",
+        foreignField: "_id",
+        as: "videos",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $addFields: {
+        totalViews: {
+          $sum: "$videos.views",
+        },
+        totalVideos: {
+          $size: "$videos",
+        },
+      },
+    },
+    {
+      $project: {
+        name: 1,
+        description: 1,
+        totalViews: 1,
+        totalVideos: 1,
+        videos: {
+          _id: 1,
+          "videoFile.url": 1,
+          "thumbnail.url": 1,
+          title: 1,
+          description: 1,
+          duration: 1,
+          createdAt: 1,
+          views: 1,
+        },
+        owner: {
+          _id: 1,
+          username: 1,
+          fullName: 1,
+        },
+      },
+    },
+  ]);
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, playlistVideo, "playlist fetched successfully.!")
+    );
 });
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const { videoId, playlistId } = req.params;
-  console.log(videoId, playlistId);
 
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid videoId");
@@ -61,37 +180,81 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const video = await Video.findById(videoId);
 
   if (!playlist) {
-    throw new ApiError(400, "playlist not found");
+    throw new ApiError(400, "Playlist not found");
   }
 
   if (!video) {
-    throw new ApiError(400, "video not found");
+    throw new ApiError(400, "Video not found");
   }
 
-  const addVideo = await Playlist.findByIdAndUpdate(
-    playlistId,
-    {
-      videos: [video._id],
-    },
-    { new: true }
+  const existingIndex = playlist.videos.findIndex(
+    (id) => id.toString() === videoId
   );
 
-  console.log(addVideo);
+  if (existingIndex !== -1) {
+    playlist.videos[existingIndex] = video._id;
+  } else {
+    playlist.videos.push(video._id);
+  }
 
-  if (!addVideo) {
-    throw new ApiError(400, "failed to add video into playlist");
+  const updatedPlaylist = await playlist.save();
+
+  console.log(updatedPlaylist);
+
+  if (!updatedPlaylist) {
+    throw new ApiError(400, "Failed to add video to playlist");
   }
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, addVideo, "video added into playlist successfully.!")
+      new ApiResponse(
+        200,
+        updatedPlaylist,
+        "Video added to playlist successfully"
+      )
     );
 });
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
-  const { playlistId, videoId } = req.params;
   // TODO: remove video from playlist
+  const { playlistId, videoId } = req.params;
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid videoId");
+  }
+  if (!isValidObjectId(playlistId)) {
+    throw new ApiError(400, "Invalid PlaylistId");
+  }
+
+  const playlist = await Playlist.findById(playlistId);
+  const video = await Video.findById(videoId);
+
+  if (!playlist) {
+    throw new ApiError(400, "Playlist not found");
+  }
+
+  if (!video) {
+    throw new ApiError(400, "Video not found");
+  }
+
+  const index = playlist.videos.indexOf(videoId);
+  if (index !== -1) {
+    playlist.videos.splice(index, 1);
+  } else {
+    throw new ApiError(400, "Video is not in the playlist");
+  }
+
+  await playlist.save();
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { playlist: playlist },
+        "Video removed from playlist successfully"
+      )
+    );
 });
 
 const deletePlaylist = asyncHandler(async (req, res) => {
