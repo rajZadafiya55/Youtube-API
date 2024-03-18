@@ -5,6 +5,15 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiRespone.js";
 
+const getAllTweets = asyncHandler(async (req, res) => {
+  // TODO: get user tweets
+  const tweet = await Tweet.find({});
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tweet, "All Tweet fetched Successfully.!"));
+});
+
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
 
@@ -49,7 +58,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
   if (!tweet) {
     throw new ApiError(400, "data not Found");
   }
-  
+
   return res
     .status(200)
     .json(new ApiResponse(200, tweet, "Tweet fetched Successfully.!"));
@@ -107,4 +116,4 @@ const deleteTweet = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, deleteTweet, "tweet delete Successfully"));
 });
 
-export { createTweet, getUserTweets, updateTweet, deleteTweet };
+export {getAllTweets, createTweet, getUserTweets, updateTweet, deleteTweet };
