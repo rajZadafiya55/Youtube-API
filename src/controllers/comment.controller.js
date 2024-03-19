@@ -90,13 +90,6 @@ const updateComment = asyncHandler(async (req, res) => {
   if (!isValidObjectId(commentId)) {
     throw new ApiError(400, "Invalid commentId");
   }
-
-  const comment = await Comment.findById(commentId);
-
-  if (!comment) {
-    throw new ApiError(400, "comment not found");
-  }
-
   const updateedComment = await Comment.findByIdAndUpdate(
     commentId,
     {
@@ -124,12 +117,6 @@ const deleteComment = asyncHandler(async (req, res) => {
 
   if (!isValidObjectId(commentId)) {
     throw new ApiError(400, "Invalid commentId");
-  }
-
-  const comment = await Comment.findById(commentId);
-
-  if (!comment) {
-    throw new ApiError(400, "comment not found");
   }
 
   const deleteComment = await Comment.findByIdAndDelete(commentId);

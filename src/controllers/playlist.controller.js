@@ -179,14 +179,6 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const playlist = await Playlist.findById(playlistId);
   const video = await Video.findById(videoId);
 
-  if (!playlist) {
-    throw new ApiError(400, "Playlist not found");
-  }
-
-  if (!video) {
-    throw new ApiError(400, "Video not found");
-  }
-
   const existingIndex = playlist.videos.findIndex(
     (id) => id.toString() === videoId
   );
@@ -227,15 +219,6 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   }
 
   const playlist = await Playlist.findById(playlistId);
-  const video = await Video.findById(videoId);
-
-  if (!playlist) {
-    throw new ApiError(400, "Playlist not found");
-  }
-
-  if (!video) {
-    throw new ApiError(400, "Video not found");
-  }
 
   const index = playlist.videos.indexOf(videoId);
   if (index !== -1) {
@@ -263,12 +246,6 @@ const deletePlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid PlaylistId");
   }
 
-  const playlist = await Playlist.findById(playlistId);
-
-  if (!playlist) {
-    throw new ApiError(400, "playlist not found");
-  }
-
   const playlistDelete = await Playlist.findByIdAndDelete(playlistId);
 
   if (!playlistDelete) {
@@ -286,12 +263,6 @@ const updatePlaylist = asyncHandler(async (req, res) => {
 
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid PlaylistId");
-  }
-
-  const playlist = await Playlist.findById(playlistId);
-
-  if (!playlist) {
-    throw new ApiError(400, "playlist not found");
   }
 
   const playlistUpdated = await Playlist.findByIdAndUpdate(
