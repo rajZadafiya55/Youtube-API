@@ -50,13 +50,61 @@ const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
   const { userId } = req.params;
 
-  if (!isValidObjectId(userId)) {
+  if (!isValidObjectId(userId)) { 
     throw new ApiError(400, "Invalid userId");
   }
-  const tweet = await Tweet.findById(userId);
+  // const tweet = await Tweet.findById(userId);
 
-  if (!tweet) {
-    throw new ApiError(400, "data not Found");
+  // if (!tweet) {
+  //   throw new ApiError(400, "data not Found");
+  // }
+
+
+  const tweet = await Tweet.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likeCount: {
+          $size: "$likes",
+        },
+      },
+    },
+    {
+      $project: {
+        content: 1,
+        video: 1,
+        owner: {
+          _id: 1,
+          username: 1,
+          fullName: 1,
+        },
+        likeCount: 1,
+      },
+    },
+  ]);
+
+  if (tweet.length === 0) {
+    return res.status(404).json(new ApiResponse(404, null, "No tweets found for this user."));
   }
 
   return res

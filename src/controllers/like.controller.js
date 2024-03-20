@@ -67,6 +67,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
   });
 
   if (liked) {
+    await Like.findByIdAndDelete(liked._id);
     return res.status(200).json(new ApiResponse(200, { isLiked: false }));
   }
 
@@ -95,14 +96,14 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     },
     {
       $project: {
-        videos:{
-            title:1,
-            description:1,
-            duration:1,
-            views:1,
-            owner:1,
-            videFile:1,
-            thumbnail:1
+        videos: {
+          title: 1,
+          description: 1,
+          duration: 1,
+          views: 1,
+          owner: 1,
+          videFile: 1,
+          thumbnail: 1,
         },
       },
     },
