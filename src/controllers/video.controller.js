@@ -10,8 +10,43 @@ const getAllVideos = asyncHandler(async (req, res) => {
   //TODO: get all videos based on query, sort, pagination
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
-  // const filter = {};
-  const video = await Video.find({});
+
+  const video = await Video.aggregate([
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likeCount: {
+          $size: "$likes",
+        },
+      },
+    },
+    {
+      $project: {
+        videoFile: 1,
+        thumbnail: 1,
+        title: 1,
+        description: 1,
+        views: 1,
+        isPublished: 1,
+        likeCount: 1,
+      },
+    },
+  ]);
 
   return res
     .status(200)
