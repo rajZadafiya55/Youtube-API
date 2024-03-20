@@ -53,12 +53,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
   if (!isValidObjectId(userId)) { 
     throw new ApiError(400, "Invalid userId");
   }
-  // const tweet = await Tweet.findById(userId);
-
-  // if (!tweet) {
-  //   throw new ApiError(400, "data not Found");
-  // }
-
 
   const tweet = await Tweet.aggregate([
     { 
