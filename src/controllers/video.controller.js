@@ -80,11 +80,47 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid VideoId");
   }
 
-  const video = await Video.findById(videoId);
-
-  if (!video) {
-    throw new ApiError(400, "video not found");
-  }
+  const video = await Video.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(videoId),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likeCount: {
+          $size: "$likes",
+        },
+      },
+    },
+    {
+      $project: {
+        videoFile: 1,
+        thumbnail: 1,
+        title: 1,
+        description: 1,
+        views: 1,
+        isPublished: 1,
+        likeCount: 1,
+      },
+    },
+  ]);
 
   return res
     .status(200)
@@ -178,7 +214,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   if (!video) {
     throw new ApiError(400, "video not found");
   }
-  
+
   // console.log("video", !video.isPublished);
   const publishToggle = await Video.findByIdAndUpdate(videoId, {
     $set: {

@@ -18,6 +18,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   });
 
   if (liked) {
+    await Like.findByIdAndDelete(liked._id);
     return res.status(200).json(new ApiResponse(200, { isLiked: false }));
   }
 
@@ -43,6 +44,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   });
 
   if (liked) {
+    await Like.findByIdAndDelete(liked._id);
     return res.status(200).json(new ApiResponse(200, { isLiked: false }));
   }
 
@@ -72,7 +74,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
   }
 
   await Like.create({
-    tweet: tweetId,
+    tweet: tweetId, 
     likedBy: req.user?._id,
   });
 
