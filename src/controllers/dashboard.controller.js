@@ -7,7 +7,77 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiRespone.js";
 
 const getChannelStats = asyncHandler(async (req, res) => {
-  // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
+  // TODO: Get the channel stats like total video views, total subscribers, total video s, total likes etc.
+  const userId = req.user?._id;
+
+  const video = await Video.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $group: {
+        _id: userId,
+        totalLikes: {
+          $sum: {
+            $size: "$likes",
+          },
+        },
+        totalViews: {
+          $sum: "$views",
+        },
+        totalVideos: {
+          $sum: 1,
+        },
+      },
+    },
+    {
+      $project: {
+        _id: userId,
+        totalLikes: 1,
+        totalViews: 1,
+        totalVideos: 1,
+      },
+    },
+  ]);
+
+  const totalSubscribers = await Subscription.aggregate([
+    {
+      $match: {
+        channel: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $group: {
+        _id: userId,
+        subscriberCount: {
+          $sum: 1,
+        },
+      },
+    },
+  ]);
+
+  const channelStats = {
+    totalSubscribers: totalSubscribers[0]?.subscriberCount,
+    totalLikes: video[0]?.totalLikes,
+    totalViews: video[0]?.totalViews,
+    totalVideos: video[0]?.totalVideos ,
+  };
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, channelStats, "channel stats fetched successfully.!")
+    );
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
@@ -51,6 +121,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
         views: 1,
         isPublished: 1,
         likeCount: 1,
+        createdAt: 1,
       },
     },
   ]);
