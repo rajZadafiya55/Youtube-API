@@ -12,16 +12,15 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid channelId");
   }
 
-  const subscribed = await Subscription.findOne({
+  const filter = {
     channel: channelId,
     subscriber: req.user._id,
-  });
+  };
+
+  const subscribed = await Subscription.findOne(filter);
 
   if (subscribed) {
-    await Subscription.deleteOne({
-      channel: channelId,
-      subscriber: req.user._id,
-    });
+    await Subscription.deleteOne(filter);
     return res
       .status(200)
       .json(
@@ -32,10 +31,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         )
       );
   } else {
-    await Subscription.create({
-      channel: channelId,
-      subscriber: req.user._id,
-    });
+    await Subscription.create(filter);
 
     return res
       .status(200)

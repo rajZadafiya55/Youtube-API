@@ -12,20 +12,18 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid VideoId");
   }
 
-  const liked = await Like.findOne({
+  const filter = {
     video: videoId,
     likedBy: req.user?._id,
-  });
+  };
+  const liked = await Like.findOne(filter);
 
   if (liked) {
     await Like.findByIdAndDelete(liked._id);
     return res.status(200).json(new ApiResponse(200, { isLiked: false }));
   }
 
-  await Like.create({
-    video: videoId,
-    likedBy: req.user?._id,
-  });
+  await Like.create(filter);
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
 });
@@ -38,20 +36,18 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid commentId");
   }
 
-  const liked = await Like.findOne({
+  const filter = {
     comment: commentId,
     likedBy: req.user?._id,
-  });
+  };
+  const liked = await Like.findOne(filter);
 
   if (liked) {
     await Like.findByIdAndDelete(liked._id);
     return res.status(200).json(new ApiResponse(200, { isLiked: false }));
   }
 
-  await Like.create({
-    comment: commentId,
-    likedBy: req.user?._id,
-  });
+  await Like.create(filter);
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
 });
@@ -63,20 +59,18 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid tweetId");
   }
 
-  const liked = await Like.findOne({
+  const filter = {
     tweet: tweetId,
     likedBy: req.user?._id,
-  });
+  };
+  const liked = await Like.findOne(filter);
 
   if (liked) {
     await Like.findByIdAndDelete(liked._id);
     return res.status(200).json(new ApiResponse(200, { isLiked: false }));
   }
 
-  await Like.create({
-    tweet: tweetId,
-    likedBy: req.user?._id,
-  });
+  await Like.create(filter);
 
   return res.status(200).json(new ApiResponse(200, { isLiked: true }));
 });
