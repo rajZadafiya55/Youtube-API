@@ -20,7 +20,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
       $lookup: {
         from: "users",
         localField: "owner",
-        foreignField: "_id",
+        foreignField: "_id", 
         as: "owner",
       },
     },
@@ -48,6 +48,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
         views: 1,
         isPublished: 1,
         likeCount: 1,
+        createdAt:1,
+        owner:{
+          username:1
+        }
       },
     },
   ]);
