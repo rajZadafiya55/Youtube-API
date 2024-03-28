@@ -11,11 +11,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
   const video = await Video.aggregate([
-    {
-      $match: {
-        isPublished: true,
-      },
-    },
+    // {
+    //   $match: {
+    //     isPublished: true,
+    //   },
+    // },
     {
       $lookup: {
         from: "users",
