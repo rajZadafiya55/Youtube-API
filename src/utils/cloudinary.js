@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { extractPublicId } from "cloudinary-build-url";
 import fs from "fs";
 
 cloudinary.config({
@@ -34,4 +35,16 @@ const deleteCloudniary = async (publicId, resource_type) => {
   }
 };
 
-export { uploadOnCloudinary, deleteCloudniary };
+const deleteUserCloudniary = async (url, resourceType = "image") => {
+  const public_id = extractPublicId(url);
+  try {
+    const response = await cloudinary.uploader.destroy(public_id, {
+      resource_type: resourceType,
+    });
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export { uploadOnCloudinary, deleteCloudniary, deleteUserCloudniary };
