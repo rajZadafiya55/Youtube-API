@@ -67,7 +67,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         from: "users",
         localField: "subscribers",
         foreignField: "_id",
-        as: "subscriber",
+        as: "subscriberDetails",
       },
     },
     // {
@@ -75,10 +75,11 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     // },
     {
       $project: {
-        subscriber: {
+        subscriberDetails: {
           _id: 1,
           username: 1,
           fullName: 1,
+          avatar: 1,
         },
         subscriberCount: 1,
       },
@@ -134,6 +135,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
           _id: 1,
           username: 1,
           fullName: 1,
+          avatar: 1,
         },
         channelSubscribedCount: 1,
       },

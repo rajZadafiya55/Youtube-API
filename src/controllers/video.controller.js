@@ -42,6 +42,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     {
       $project: {
         videoFile: 1,
+        duration: 1,
         thumbnail: 1,
         title: 1,
         description: 1,
@@ -51,6 +52,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         createdAt: 1,
         owner: {
           username: 1,
+          avatar: 1,
         },
       },
     },
@@ -200,7 +202,18 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
       $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
+        },
         likeCount: {
           $size: "$likes",
         },
@@ -215,6 +228,10 @@ const getVideoById = asyncHandler(async (req, res) => {
         views: 1,
         isPublished: 1,
         likeCount: 1,
+        owner: {
+          avatar: 1,
+        },
+        subscribersCount: 1,
       },
     },
   ]);
