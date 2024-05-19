@@ -106,9 +106,21 @@ const getChannelVideos = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "comments",
+        localField: "_id",
+        foreignField: "video",
+        as: "comments",
+      },
+    },
+
+    {
       $addFields: {
         likeCount: {
           $size: "$likes",
+        },
+        commentCount: {
+          $size: "$comments",
         },
       },
     },
@@ -122,6 +134,8 @@ const getChannelVideos = asyncHandler(async (req, res) => {
         isPublished: 1,
         likeCount: 1,
         createdAt: 1,
+        duration: 1,
+        commentCount: 1,
       },
     },
   ]);
