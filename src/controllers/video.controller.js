@@ -191,6 +191,15 @@ const getVideoById = asyncHandler(async (req, res) => {
         localField: "owner",
         foreignField: "_id",
         as: "owner",
+        pipeline: [
+          {
+            $project: {
+              userName: 1,
+              email: 1,
+              avatar: 1,
+            },
+          },
+        ],
       },
     },
     {
@@ -211,10 +220,13 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
+        owner: {
+          $first: "$owner",
+        },
         subscribersCount: {
           $size: "$subscribers",
         },
-        likeCount: {
+        likes: {
           $size: "$likes",
         },
       },
@@ -223,28 +235,27 @@ const getVideoById = asyncHandler(async (req, res) => {
       $project: {
         videoFile: 1,
         thumbnail: 1,
+        duration: 1,
         title: 1,
         description: 1,
         views: 1,
         isPublished: 1,
         likeCount: 1,
-        owner: {
-          avatar: 1,
-        },
         subscribersCount: 1,
+        createdAt: 1,
       },
     },
   ]);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "video fetched Successfully.!"));
+    .json(new ApiResponse(200, video[0], "video fetched Successfully.!"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
   //TODO: update video details like title, description, thumbnail
   const { videoId } = req.params;
-  const { title, description } = req.body;
+  const { title, description,isPublished } = req.body;
   const thumbnailLocalPath = req.file?.path;
 
   // console.log("req.file",req.file?.path)
@@ -279,6 +290,7 @@ const updateVideo = asyncHandler(async (req, res) => {
           url: thumbnailFile.url,
           public_id: thumbnailFile.public_id,
         },
+        isPublished,
       },
     },
     { new: true }
