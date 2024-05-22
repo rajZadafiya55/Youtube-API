@@ -25,6 +25,15 @@ const getVideoComments = asyncHandler(async (req, res) => {
         localField: "owner",
         foreignField: "_id",
         as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
       },
     },
     {
@@ -37,36 +46,21 @@ const getVideoComments = asyncHandler(async (req, res) => {
     },
     {
       $addFields: {
-        likeCount: {
+        owner: {
+          $first: "$owner",
+        },
+        likes: {
           $size: "$likes",
         },
       },
     },
-    {
-      $project: {
-        content: 1,
-        video: 1,
-        owner: {
-          _id: 1,
-          username: 1,
-          fullName: 1,
-        },
-        likeCount: 1,
-      },
-    },
   ]);
 
-  const commentCount = await Comment.countDocuments({ video: videoId });
+  // const commentCount = await Comment.countDocuments({ video: videoId });
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { comments, commentCount },
-        "comments fetched successfully.!"
-      )
-    );
+    .json(new ApiResponse(200, comments, "comments fetched successfully.!"));
 });
 
 const addComment = asyncHandler(async (req, res) => {
