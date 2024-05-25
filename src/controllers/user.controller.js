@@ -1,7 +1,10 @@
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
-import { deleteUserCloudniary, uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteUserCloudniary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiRespone.js";
 import Jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -67,11 +70,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     fullName,
-    username: username.toLowerCase(),
     email,
     avatar: avatar.url,
     coverImage: coverImage?.url || "",
     password,
+    username: username.toLowerCase(),
   });
 
   const createdUser = await User.findById(user._id).select(
@@ -233,7 +236,6 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
-
 
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res

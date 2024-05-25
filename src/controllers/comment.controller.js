@@ -147,4 +147,65 @@ const deleteComment = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "comment deleted Successfully.!"));
 });
 
-export { getVideoComments, addComment, updateComment, deleteComment };
+const getUserAllVideoComments = asyncHandler(async (req, res) => {
+  //TODO: get all comments for a user videos
+  const comments = await Comment.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "comment",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        owner: {
+          $first: "$owner",
+        },
+        likes: {
+          $size: "$likes",
+        },
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        comments,
+        "All video comments fetched successfully.!"
+      )
+    );
+});
+export {
+  getVideoComments,
+  addComment,
+  updateComment,
+  deleteComment,
+  getUserAllVideoComments,
+};
