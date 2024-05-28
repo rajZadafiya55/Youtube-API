@@ -51,6 +51,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         likeCount: 1,
         createdAt: 1,
         owner: {
+          _id: 1,
           username: 1,
           avatar: 1,
         },
