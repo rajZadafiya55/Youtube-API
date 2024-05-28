@@ -194,7 +194,8 @@ const getVideoById = asyncHandler(async (req, res) => {
         pipeline: [
           {
             $project: {
-              userName: 1,
+              _id: 1,
+              username: 1,
               email: 1,
               avatar: 1,
             },
@@ -240,9 +241,10 @@ const getVideoById = asyncHandler(async (req, res) => {
         description: 1,
         views: 1,
         isPublished: 1,
-        likeCount: 1,
+        likes: 1,
         subscribersCount: 1,
         createdAt: 1,
+        owner: 1,
       },
     },
   ]);
@@ -255,7 +257,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 const updateVideo = asyncHandler(async (req, res) => {
   //TODO: update video details like title, description, thumbnail
   const { videoId } = req.params;
-  const { title, description,isPublished } = req.body;
+  const { title, description, isPublished } = req.body;
   const thumbnailLocalPath = req.file?.path;
 
   // console.log("req.file",req.file?.path)
