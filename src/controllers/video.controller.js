@@ -368,6 +368,44 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     );
 });
 
+const toggleWatchLater = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid videoId!");
+  }
+
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(400, "Cannot find video");
+  }
+
+  // Toggle the watch later status
+  const videoStatus = !video.isWatchLater;
+  video.isWatchLater = videoStatus;
+  await video.save(); // Save the updated status to the video document
+
+  const userId = req.user._id; // Assume user ID is available in the request object
+
+  if (videoStatus) {
+    // Add the videoId to watchHistory
+    await User.updateOne(
+      { _id: userId },
+      { $addToSet: { watchHistory: videoId } }
+    );
+  } else {
+    // Remove the videoId from watchHistory
+    await User.updateOne({ _id: userId }, { $pull: { watchHistory: videoId } });
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { videoStatus }, "Video status updated successfully")
+    );
+});
+
 export {
   getAllVideos,
   publishAVideo,
@@ -375,4 +413,5 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  toggleWatchLater,
 };
