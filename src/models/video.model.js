@@ -37,6 +37,10 @@ var videoSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isWatchLater: {
+      type: Boolean,
+      default: false,
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
