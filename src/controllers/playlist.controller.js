@@ -93,12 +93,12 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 });
 
 const getPlaylistById = asyncHandler(async (req, res) => {
-  //TODO: get playlist by id
   const { playlistId } = req.params;
 
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid PlaylistId");
   }
+
   const playlist = await Playlist.findById(playlistId);
   if (!playlist) {
     throw new ApiError(400, "playlist not found");
@@ -127,13 +127,45 @@ const getPlaylistById = asyncHandler(async (req, res) => {
       },
     },
     {
-      $addFields: {
-        totalViews: {
-          $sum: "$videos.views",
+      $unwind: "$videos",
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "videos.owner",
+        foreignField: "_id",
+        as: "videoOwners",
+      },
+    },
+    {
+      $unwind: "$videoOwners",
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        description: { $first: "$description" },
+        totalViews: { $sum: "$videos.views" },
+        totalVideos: { $sum: 1 },
+        videos: {
+          $push: {
+            _id: "$videos._id",
+            videoFile: "$videos.videoFile",
+            thumbnail: "$videos.thumbnail",
+            title: "$videos.title",
+            description: "$videos.description",
+            duration: "$videos.duration",
+            createdAt: "$videos.createdAt",
+            views: "$videos.views",
+            isPublished: "$videos.isPublished",
+            owner: {
+              _id: "$videoOwners._id",
+              username: "$videoOwners.username",
+              email: "$videoOwners.email",
+            },
+          },
         },
-        totalVideos: {
-          $size: "$videos",
-        },
+        owner: { $first: "$owner" },
       },
     },
     {
@@ -142,30 +174,24 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         description: 1,
         totalViews: 1,
         totalVideos: 1,
-        videos: {
-          _id: 1,
-          "videoFile.url": 1,
-          "thumbnail.url": 1,
-          title: 1,
-          description: 1,
-          duration: 1,
-          createdAt: 1,
-          views: 1,
-        },
+        videos: 1,
         owner: {
           _id: 1,
           username: 1,
           fullName: 1,
+          email: 1,
         },
       },
     },
   ]);
+
   return res
     .status(200)
     .json(
       new ApiResponse(200, playlistVideo, "playlist fetched successfully.!")
     );
 });
+
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
   const { videoId, playlistId } = req.params;
