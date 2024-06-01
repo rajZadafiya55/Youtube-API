@@ -73,6 +73,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
         totalVideos: 1,
         totalViews: 1,
         videos: {
+          _id: 1,
           videoFile: 1,
           thumbnail: 1,
           title: 1,
