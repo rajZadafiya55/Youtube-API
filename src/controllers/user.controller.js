@@ -408,7 +408,13 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 
   // Fetch the updated user data
   const updatedUser = await User.findById(userId, { watchHistory: 1 }).populate(
-    "watchHistory"
+    {
+      path: "watchHistory",
+      populate: {
+        path: "owner",
+        select: "_id username",
+      },
+    }
   );
 
   return res
