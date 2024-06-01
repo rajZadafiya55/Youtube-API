@@ -11,11 +11,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
 
   const video = await Video.aggregate([
-    // {
-    //   $match: {
-    //     isPublished: true,
-    //   },
-    // },
+    {
+      $match: {
+        isPublished: true,
+      },
+    },
     {
       $lookup: {
         from: "users",
@@ -421,6 +421,33 @@ const toggleWatchLater = asyncHandler(async (req, res) => {
     );
 });
 
+//{{server}}videos/views/66114baf276da225cfe981b0
+const videoViews = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid videoId!");
+  }
+
+  let video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(400, "Cannot find video");
+  }
+
+  video.views += 1;
+
+  await video.save();
+
+  const videoStatus = video.views;
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { videoStatus }, "Video status updated successfully")
+    );
+});
+
 export {
   getAllVideos,
   publishAVideo,
@@ -429,4 +456,5 @@ export {
   deleteVideo,
   togglePublishStatus,
   toggleWatchLater,
+  videoViews,
 };

@@ -7,6 +7,7 @@ import {
   togglePublishStatus,
   toggleWatchLater,
   updateVideo,
+  videoViews,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -38,6 +39,7 @@ router
   .delete(verifyJWT, deleteVideo)
   .patch(verifyJWT, upload.single("thumbnail"), updateVideo);
 
+router.route("/views/:videoId").patch(videoViews);
 router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
 router.route("/toggle/watchlater/:videoId").patch(verifyJWT, toggleWatchLater);
 
