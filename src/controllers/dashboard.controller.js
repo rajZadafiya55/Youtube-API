@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
 import { Subscription } from "../models/subscription.model.js";
 import { Like } from "../models/like.model.js";
@@ -145,4 +145,82 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "All Videos Fetched Successfully..!"));
 });
 
-export { getChannelStats, getChannelVideos };
+// api routs
+//{{server}}dashboard/videos/665013b9127e1193aa16fa34
+
+const getChannelVideosById = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  if (!isValidObjectId(userId)) {
+    throw new ApiError(400, "Invalid userId!");
+  }
+
+  const video = await Video.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "comments",
+        localField: "_id",
+        foreignField: "video",
+        as: "comments",
+      },
+    },
+
+    {
+      $addFields: {
+        likeCount: {
+          $size: "$likes",
+        },
+        commentCount: {
+          $size: "$comments",
+        },
+      },
+    },
+    {
+      $project: {
+        videoFile: 1,
+        thumbnail: 1,
+        title: 1,
+        description: 1,
+        views: 1,
+        isPublished: 1,
+        likeCount: 1,
+        createdAt: 1,
+        duration: 1,
+        commentCount: 1,
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        video,
+        "All Videos Fetched Successfully by User Id..!"
+      )
+    );
+});
+
+export { getChannelStats, getChannelVideos, getChannelVideosById };
