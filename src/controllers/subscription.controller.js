@@ -31,7 +31,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         )
       );
   } else {
-    await Subscription.create(filter);
+    await Subscription.create({ ...filter, isSubscribed: true });
 
     return res
       .status(200)
@@ -114,7 +114,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: subscriberId,
-        channelSubscribedCount: { $sum: 1 }, // Count the number of channel
+        channelSubscribedCount: { $sum: 1 }, // Count the number of channels
         channels: { $push: "$channel" }, // Collect channel details
       },
     },
@@ -126,9 +126,21 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         as: "channelDetails",
       },
     },
-    // {
-    //   $unwind: "$channelDetails",
-    // },
+    {
+      $unwind: "$channelDetails",
+    },
+    {
+      $addFields: {
+        "channelDetails.isSubscribed": true,
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        channelSubscribedCount: { $first: "$channelSubscribedCount" },
+        channelDetails: { $push: "$channelDetails" },
+      },
+    },
     {
       $project: {
         channelDetails: {
@@ -136,6 +148,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
           username: 1,
           fullName: 1,
           avatar: 1,
+          isSubscribed: 1,
         },
         channelSubscribedCount: 1,
       },
@@ -144,7 +157,9 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, subscribed, "channel fetched successfully.!"));
+    .json(new ApiResponse(200, subscribed, "Channels fetched successfully.!"));
 });
+
+export default getSubscribedChannels;
 
 export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels };

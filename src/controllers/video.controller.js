@@ -215,7 +215,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "subscriptions",
-        localField: "_id",
+        localField: "owner._id",
         foreignField: "channel",
         as: "subscribers",
       },
@@ -230,6 +230,12 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
         likes: {
           $size: "$likes",
+        },
+        isSubscribed: {
+          $in: [
+            new mongoose.Types.ObjectId(req.user?._id),
+            "$subscribers.subscriber",
+          ],
         },
       },
     },
@@ -246,13 +252,18 @@ const getVideoById = asyncHandler(async (req, res) => {
         subscribersCount: 1,
         createdAt: 1,
         owner: 1,
+        isSubscribed: 1,
       },
     },
   ]);
 
+  if (!video || video.length === 0) {
+    throw new ApiError(404, "Video not found");
+  }
+
   return res
     .status(200)
-    .json(new ApiResponse(200, video[0], "video fetched Successfully.!"));
+    .json(new ApiResponse(200, video[0], "Video fetched successfully"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
