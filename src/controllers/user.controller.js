@@ -8,6 +8,7 @@ import {
 import { ApiResponse } from "../utils/ApiRespone.js";
 import Jwt from "jsonwebtoken";
 import mongoose, { isValidObjectId } from "mongoose";
+import nodemailer from "nodemailer";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -29,7 +30,6 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName } = req.body;
-  console.log("email: ", email);
 
   if (
     [fullName, email, username, password].some((field) => field?.trim() === "")
@@ -80,6 +80,38 @@ const registerUser = asyncHandler(async (req, res) => {
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
+
+  // ==========={send Mail}==================================================
+
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    host: "smtp.forwardemail.net",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.PWD,
+    },
+  });
+
+  const mailOptions = {
+    from: `"YouTube...." <${process.env.EMAIL}>`,
+    to: email,
+    subject: "Login Credentials 🔐",
+    html: `
+      <div>
+        <img src="https://visme.co/blog/wp-content/uploads/2020/02/header-1200.gif" alt="img" width="100%"/>
+        <h3>Here are your login details:</h3>
+        <p>User ID: ${email}</p>
+        <p>Password: ${password}</p>
+        </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+
+  // ===========================================================================
+
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }

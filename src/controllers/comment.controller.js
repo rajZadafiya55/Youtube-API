@@ -83,9 +83,6 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "video not found");
   }
 
-  console.log("video", video?._id);
-  console.log("owner", req.user?._id);
-
   const comment = await Comment.create({
     content,
     video: video?._id,

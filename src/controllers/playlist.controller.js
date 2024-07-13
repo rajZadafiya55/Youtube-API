@@ -218,8 +218,6 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 
   const updatedPlaylist = await playlist.save();
 
-  console.log(updatedPlaylist);
-
   if (!updatedPlaylist) {
     throw new ApiError(400, "Failed to add video to playlist");
   }

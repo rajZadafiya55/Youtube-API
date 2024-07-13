@@ -64,61 +64,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "All Videos Fetched Successfully..!"));
 });
 
-// const publishAVideo = asyncHandler(async (req, res) => {
-//   const { title, description } = req.body;
-//   if (!title || !description) {
-//     throw new ApiError(400, "All Field is required");
-//   }
-//   //   console.log("req.files video",req.files?.videoFile[0].path)
-//   //   console.log("req.files thumbnail ", req.files?.thumbnail[0].path);
-
-//   const videoLocalPath = req.files?.videoFile[0].path;
-//   const thumbnailLocalPath = req.files?.thumbnail[0]?.path;
-
-//   if (!videoLocalPath) {
-//     throw new ApiError(400, "videoFilePath is required");
-//   }
-
-//   if (!thumbnailLocalPath) {
-//     throw new ApiError(400, "thumbnailFilePath is required");
-//   }
-//   //   const vide0Path = req.files?.video
-//   //   console.log(title, description);
-
-//   const video = await uploadOnCloudinary(videoLocalPath);
-//   const thumbnailFile = await uploadOnCloudinary(thumbnailLocalPath);
-
-//   if (!video) {
-//     throw new ApiError(400, "video file not found");
-//   }
-//   if (!thumbnailFile) {
-//     throw new ApiError(400, "thumbnail file not found");
-//   }
-
-//   // console.log("video", video);
-//   // console.log("thumbnail", thumbnailFile);
-
-//   const videoUpload = await Video.create({
-//     title,
-//     description,
-//     duration: video.duration,
-//     videoFile: {
-//       url: video.url,
-//       public_id: video.public_id,
-//     },
-//     thumbnail: {
-//       url: thumbnailFile.url,
-//       public_id: thumbnailFile.public_id,
-//     },
-//     owner: req.user?._id,
-//     isPublished: false,
-//   });
-
-//   return res
-//     .status(200)
-//     .json(new ApiResponse(200, videoUpload, "video uploaded Successfully"));
-// });
-
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   if (!title || !description) {
@@ -128,7 +73,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const videoFile = req.files?.videoFile;
   const thumbnailFile = req.files?.thumbnail;
 
-  console.log("res.files", req.files?.videoFile);
 
   if (!videoFile) {
     throw new ApiError(400, "Video file is required");
@@ -180,90 +124,107 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid VideoId");
   }
 
-  const video = await Video.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(videoId),
+  try {
+    const video = await Video.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(videoId),
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "owner",
-        foreignField: "_id",
-        as: "owner",
-        pipeline: [
-          {
-            $project: {
-              _id: 1,
-              username: 1,
-              email: 1,
-              avatar: 1,
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                username: 1,
+                email: 1,
+                avatar: 1,
+              },
             },
-          },
-        ],
-      },
-    },
-    {
-      $lookup: {
-        from: "likes",
-        localField: "_id",
-        foreignField: "video",
-        as: "likes",
-      },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "owner._id",
-        foreignField: "channel",
-        as: "subscribers",
-      },
-    },
-    {
-      $addFields: {
-        owner: {
-          $first: "$owner",
-        },
-        subscribersCount: {
-          $size: "$subscribers",
-        },
-        likes: {
-          $size: "$likes",
-        },
-        isSubscribed: {
-          $in: [
-            new mongoose.Types.ObjectId(req.user?._id),
-            "$subscribers.subscriber",
           ],
         },
       },
-    },
-    {
-      $project: {
-        videoFile: 1,
-        thumbnail: 1,
-        duration: 1,
-        title: 1,
-        description: 1,
-        views: 1,
-        isPublished: 1,
-        likes: 1,
-        subscribersCount: 1,
-        createdAt: 1,
-        owner: 1,
-        isSubscribed: 1,
+      {
+        $lookup: {
+          from: "likes",
+          let: { videoId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$video", "$$videoId"],
+                },
+              },
+            },
+          ],
+          as: "likes",
+        },
       },
-    },
-  ]);
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "owner._id",
+          foreignField: "channel",
+          as: "subscribers",
+        },
+      },
+      {
+        $addFields: {
+          owner: {
+            $first: "$owner",
+          },
+          subscribersCount: {
+            $size: "$subscribers",
+          },
+          likesCount: {
+            $size: "$likes",
+          },
+          isSubscribed: {
+            $in: [
+              new mongoose.Types.ObjectId(req.user?._id),
+              "$subscribers.subscriber",
+            ],
+          },
+          likeFlag: {
+            $in: [new mongoose.Types.ObjectId(req.user?._id), "$likes.likedBy"],
+          },
+        },
+      },
+      {
+        $project: {
+          videoFile: 1,
+          thumbnail: 1,
+          duration: 1,
+          title: 1,
+          description: 1,
+          views: 1,
+          isPublished: 1,
+          likesCount: 1,
+          subscribersCount: 1,
+          createdAt: 1,
+          owner: 1,
+          isSubscribed: 1,
+          likeFlag: 1,
+        },
+      },
+    ]);
 
-  if (!video || video.length === 0) {
-    throw new ApiError(404, "Video not found");
+    if (!video || video.length === 0) {
+      throw new ApiError(404, "Video not found");
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, video[0], "Video fetched successfully"));
+  } catch (error) {
+    console.error(error); // Log any errors for debugging
+    throw new ApiError(500, "Internal Server Error");
   }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, video[0], "Video fetched successfully"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
@@ -370,7 +331,6 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, "video not found");
   }
 
-  // console.log("video", !video.isPublished);
   const publishToggle = await Video.findByIdAndUpdate(videoId, {
     $set: {
       isPublished: !video?.isPublished,
@@ -381,8 +341,6 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, "video toggle publish failed");
   }
 
-  // console.log("publishToogle", publishToggle);
-  // console.log("ispublish", isPublished);
   return res
     .status(200)
     .json(
