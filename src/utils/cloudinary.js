@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import { extractPublicId } from "cloudinary-build-url";
 import fs from "fs";
+import streamifier from "streamifier";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,21 +9,39 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SCREAT,
 });
 
-const uploadOnCloudinary = async (localFilePath) => {
-  try {
-    if (!localFilePath) return null;
-    const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: "auto",
-    });
-    fs.unlinkSync(localFilePath);
-    return response;
-  } catch (error) {
-    console.error("Error uploading file to Cloudinary:", error);
-    fs.unlinkSync(localFilePath);
-    throw error;
-    // return null;
-  }
+const uploadOnCloudinary = async(buffer) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { resource_type: "auto" },
+      (error, result) => {
+        if (error) {
+          console.error("Error uploading file to Cloudinary:", error);
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
 };
+
+// const uploadOnCloudinary = async (localFilePath) => {
+//   try {
+//     if (!localFilePath) return null;
+//     const response = await cloudinary.uploader.upload(localFilePath, {
+//       resource_type: "auto",
+//     });
+//     fs.unlinkSync(localFilePath);
+//     return response;
+//   } catch (error) {
+//     console.error("Error uploading file to Cloudinary:", error);
+//     fs.unlinkSync(localFilePath);
+//     throw error;
+//     // return null;
+//   }
+// };
 
 const deleteCloudniary = async (publicId, resource_type) => {
   try {

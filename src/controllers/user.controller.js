@@ -31,9 +31,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName } = req.body;
 
-  if (
-    [fullName, email, username, password].some((field) => field?.trim() === "")
-  ) {
+  if ([fullName, email, username, password].some(field => field?.trim() === "")) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -45,27 +43,18 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with email or username already exists");
   }
 
-  const avatarLocalPath = req.files?.avatar[0]?.path;
-  //   const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  const avatarBuffer = req.files?.avatar[0]?.buffer;
+  const coverImageBuffer = req.files?.coverImage ? req.files.coverImage[0]?.buffer : null;
 
-  let coverImageLocalPath;
-  if (
-    req.files &&
-    Array.isArray(req.files.coverImage) &&
-    req.files.coverImage.length > 0
-  ) {
-    coverImageLocalPath = req.files.coverImage[0].path;
-  }
-
-  if (!avatarLocalPath) {
+  if (!avatarBuffer) {
     throw new ApiError(400, "Avatar file is required");
   }
 
-  const avatar = await uploadOnCloudinary(avatarLocalPath);
-  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  const avatar = await uploadOnCloudinary(avatarBuffer);
+  const coverImage = coverImageBuffer ? await uploadOnCloudinary(coverImageBuffer) : null;
 
   if (!avatar) {
-    throw new ApiError(400, "Avatar file is required");
+    throw new ApiError(400, "Avatar file upload failed");
   }
 
   const user = await User.create({
@@ -77,15 +66,11 @@ const registerUser = asyncHandler(async (req, res) => {
     username: username.toLowerCase(),
   });
 
-  const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
-
-  // ==========={send Mail}==================================================
+  const createdUser = await User.findById(user._id).select('-password -refreshToken');
 
   const transporter = nodemailer.createTransport({
-    service: "Gmail",
-    host: "smtp.forwardemail.net",
+    service: 'Gmail',
+    host: 'smtp.forwardemail.net',
     port: 587,
     secure: false,
     auth: {
@@ -97,28 +82,117 @@ const registerUser = asyncHandler(async (req, res) => {
   const mailOptions = {
     from: `"YouTube...." <${process.env.EMAIL}>`,
     to: email,
-    subject: "Login Credentials 🔐",
+    subject: 'Login Credentials 🔐',
     html: `
       <div>
         <img src="https://visme.co/blog/wp-content/uploads/2020/02/header-1200.gif" alt="img" width="100%"/>
         <h3>Here are your login details:</h3>
         <p>User ID: ${email}</p>
         <p>Password: ${password}</p>
-        </div>
+      </div>
     `,
   };
 
   await transporter.sendMail(mailOptions);
 
-  // ===========================================================================
-
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
-  return res
-    .status(201)
-    .json(new ApiResponse(200, createdUser, "User registered Successfully"));
+
+  return res.status(201).json(new ApiResponse(200, createdUser, "User registered Successfully"));
 });
+
+// const registerUser = asyncHandler(async (req, res) => {
+//   const { username, email, password, fullName } = req.body;
+
+//   if (
+//     [fullName, email, username, password].some((field) => field?.trim() === "")
+//   ) {
+//     throw new ApiError(400, "All fields are required");
+//   }
+
+//   const existedUser = await User.findOne({
+//     $or: [{ username }, { email }],
+//   });
+
+//   if (existedUser) {
+//     throw new ApiError(409, "User with email or username already exists");
+//   }
+
+//   const avatarLocalPath = req.files?.avatar[0]?.path;
+//   //   const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+//   let coverImageLocalPath;
+//   if (
+//     req.files &&
+//     Array.isArray(req.files.coverImage) &&
+//     req.files.coverImage.length > 0
+//   ) {
+//     coverImageLocalPath = req.files.coverImage[0].path;
+//   }
+
+//   if (!avatarLocalPath) {
+//     throw new ApiError(400, "Avatar file is required");
+//   }
+
+//   const avatar = await uploadOnCloudinary(avatarLocalPath);
+//   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+//   if (!avatar) {
+//     throw new ApiError(400, "Avatar file is required");
+//   }
+
+//   const user = await User.create({
+//     fullName,
+//     email,
+//     avatar: avatar.url,
+//     coverImage: coverImage?.url || "",
+//     password,
+//     username: username.toLowerCase(),
+//   });
+
+//   const createdUser = await User.findById(user._id).select(
+//     "-password -refreshToken"
+//   );
+
+//   // ==========={send Mail}==================================================
+
+//   const transporter = nodemailer.createTransport({
+//     service: "Gmail",
+//     host: "smtp.forwardemail.net",
+//     port: 587,
+//     secure: false,
+//     auth: {
+//       user: process.env.EMAIL,
+//       pass: process.env.PWD,
+//     },
+//   });
+
+//   const mailOptions = {
+//     from: `"YouTube...." <${process.env.EMAIL}>`,
+//     to: email,
+//     subject: "Login Credentials 🔐",
+//     html: `
+//       <div>
+//         <img src="https://visme.co/blog/wp-content/uploads/2020/02/header-1200.gif" alt="img" width="100%"/>
+//         <h3>Here are your login details:</h3>
+//         <p>User ID: ${email}</p>
+//         <p>Password: ${password}</p>
+//         </div>
+//     `,
+//   };
+
+//   await transporter.sendMail(mailOptions);
+
+//   // ===========================================================================
+
+//   if (!createdUser) {
+//     throw new ApiError(500, "Something went wrong while registering the user");
+//   }
+//   return res
+//     .status(201)
+//     .json(new ApiResponse(200, createdUser, "User registered Successfully"));
+// });
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
