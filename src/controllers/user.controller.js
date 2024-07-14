@@ -8,7 +8,7 @@ import {
 import { ApiResponse } from "../utils/ApiRespone.js";
 import Jwt from "jsonwebtoken";
 import mongoose, { isValidObjectId } from "mongoose";
-import nodemailer from "nodemailer";
+// import nodemailer from "nodemailer";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -83,32 +83,32 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // ==========={send Mail}==================================================
 
-  const transporter = nodemailer.createTransport({
-    service: "Gmail",
-    host: "smtp.forwardemail.net",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL,
-      pass: process.env.PWD,
-    },
-  });
+  // const transporter = nodemailer.createTransport({
+  //   service: "Gmail",
+  //   host: "smtp.forwardemail.net",
+  //   port: 587,
+  //   secure: false,
+  //   auth: {
+  //     user: process.env.EMAIL,
+  //     pass: process.env.PWD,
+  //   },
+  // });
 
-  const mailOptions = {
-    from: `"YouTube...." <${process.env.EMAIL}>`,
-    to: email,
-    subject: "Login Credentials 🔐",
-    html: `
-      <div>
-        <img src="https://visme.co/blog/wp-content/uploads/2020/02/header-1200.gif" alt="img" width="100%"/>
-        <h3>Here are your login details:</h3>
-        <p>User ID: ${email}</p>
-        <p>Password: ${password}</p>
-        </div>
-    `,
-  };
+  // const mailOptions = {
+  //   from: `"YouTube...." <${process.env.EMAIL}>`,
+  //   to: email,
+  //   subject: "Login Credentials 🔐",
+  //   html: `
+  //     <div>
+  //       <img src="https://visme.co/blog/wp-content/uploads/2020/02/header-1200.gif" alt="img" width="100%"/>
+  //       <h3>Here are your login details:</h3>
+  //       <p>User ID: ${email}</p>
+  //       <p>Password: ${password}</p>
+  //       </div>
+  //   `,
+  // };
 
-  await transporter.sendMail(mailOptions);
+  // await transporter.sendMail(mailOptions);
 
   // ===========================================================================
 
