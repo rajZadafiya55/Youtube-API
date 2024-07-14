@@ -1,7 +1,7 @@
 import multer from "multer";
 
 // Ensure the public/temp directory exists
-const tempDir = "./public/temp";
+const tempDir = "uploads/";
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
